@@ -4,144 +4,177 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class FoldingCard extends StatefulWidget {
-  final bool collapsed;
-  final double collapsedHeight;
-  final double expandedHeight;
+  final bool expanded;
+  final Widget cover;
+  final List<Widget> pages;
+  final double pageHeight;
+  final Decoration pageBackground;
 
   const FoldingCard({
     Key? key,
-    this.collapsed: true,
-    this.collapsedHeight: 120,
-    this.expandedHeight: 240,
-  }) : super(key: key);
+    this.expanded: false,
+    required this.cover,
+    required this.pages,
+    required this.pageHeight,
+    required this.pageBackground,
+  })  : assert(pages.length > 1),
+        assert(pageHeight > 1),
+        super(key: key);
   @override
   _FoldingCardState createState() => _FoldingCardState();
 }
 
 class _FoldingCardState extends State<FoldingCard>
     with TickerProviderStateMixin {
-  late final AnimationController _animationController;
-  bool collapsed = true;
+  final List<AnimationController> _pageControllers = [];
 
   @override
   void initState() {
-    _animationController = AnimationController(
-        vsync: this, duration: Duration(milliseconds: 3000));
-    _animationController.addListener(() {
-      setState(() {});
-    });
-    _initValues();
+    _pageControllers.addAll(List.generate(
+        widget.pages.length - 1,
+        (index) => AnimationController(
+            vsync: this, duration: Duration(milliseconds: 2000))));
+    for (var i = 0; i < _pageControllers.length; ++i) {
+      var e = _pageControllers[i];
+      AnimationController? next =
+          i < _pageControllers.length - 1 ? _pageControllers[i + 1] : null;
+      e.addListener(() {
+        setState(() {
+          if (e.isCompleted) {
+            if (next != null) {
+              _startAnimation(next);
+            }
+          }
+        });
+      });
+    }
+    _startAnimation(_pageControllers.first);
     super.initState();
   }
 
-  void _initValues() {
-    if (collapsed != widget.collapsed) {
-      if (collapsed)
-        _animationController.forward(from: 0);
-      else
-        _animationController.reverse(from: 1);
-      collapsed = widget.collapsed;
+  void _stopAll() {
+    for (var o in _pageControllers) {
+      o.stop();
+    }
+  }
+
+  void _startAnimation(AnimationController controller) {
+    print('_FoldingCardState._startAnimation: $controller');
+    if (widget.expanded) {
+      controller.forward(from: 0);
+    } else {
+      controller.reverse(from: 1);
     }
   }
 
   @override
   void didUpdateWidget(covariant FoldingCard oldWidget) {
     setState(() {
-      _initValues();
+      _stopAll();
+      _startAnimation(_pageControllers.first);
     });
     super.didUpdateWidget(oldWidget);
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    for (var o in _pageControllers) {
+      o.dispose();
+    }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    var animationValue = _animationController.value;
-    var aniHeight = Tween<double>(
-            begin: widget.collapsedHeight,
-            end: widget.expandedHeight + widget.collapsedHeight)
-        .evaluate(_animationController);
-    return Padding(
-      padding: const EdgeInsets.all(22.0),
-      child: Stack(
+    var children = <Widget>[];
+    children.add(Transform.translate(
+      offset: Offset(
+        0.0,
+        0.0,
+        // -widget.pageHeight * (i - 1),
+      ),
+      child: _FoldingPage(
         alignment: Alignment.topCenter,
-        fit: StackFit.passthrough,
-        children: [
-          SizedBox(
-            height: aniHeight,
-            child: _buildExpanded(context),
-          ),
-          Transform(
-            alignment: Alignment.bottomCenter,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001)
-              ..rotateX((1 - animationValue) * -math.pi)
-              ..translate(0.0, animationValue * widget.collapsedHeight)
-            //
-            ,
-            child: Transform(
-              alignment: Alignment.bottomCenter,
-              transform: Matrix4.identity()..rotateX(math.pi),
-              child: Container(
-                height: widget.collapsedHeight,
-                child: _buildCollapsed(context),
-                // foregroundDecoration: animationValue < 0.5
-                //     ? null
-                //     : BoxDecoration(
-                //         color: Colors.red,
-                //       ),
-              ),
-            ),
-          ),
-        ],
+        animationValue: 0,
+        background: widget.pageBackground,
+        child: SizedBox(
+          child: widget.pages.first,
+          height: widget.pageHeight,
+        ),
       ),
+    ));
+    for (var i = 1; i < widget.pages.length; ++i) {
+      var o = widget.pages[i];
+      children.add(Transform.translate(
+        offset: Offset(
+          0.0,
+          0.0,
+          // -widget.pageHeight * (i - 1),
+        ),
+        child: _FoldingPage(
+          alignment: Alignment.bottomCenter,
+          animationValue: _pageControllers[i - 1].value,
+          background: widget.pageBackground,
+          child: SizedBox(
+            child: o,
+            height: widget.pageHeight,
+          ),
+        ),
+      ));
+    }
+    children.add(Transform.translate(
+      offset: Offset(
+        0.0,
+        0.0,
+        // -widget.pageHeight * widget.pages.length,
+      ),
+      child: _FoldingPage(
+        alignment: Alignment.bottomCenter,
+        animationValue: 0,
+        background: widget.pageBackground,
+        child: SizedBox(
+          child: widget.cover,
+          height: widget.pageHeight,
+        ),
+      ),
+    ));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
     );
   }
+}
 
-  Widget _buildExpanded(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        _toggleState(context);
-      },
-      child: Container(
-        height: widget.expandedHeight,
-        color: Colors.blue,
-        child: Image.network(
-          'https://cdn.aiktry.com/monthly_2020_08/2141736640_NicoRobinRender(OnePieceWorldSeeker).png.c1ef912d4c49b92e34bc9950f32a7fa6.png',
-          fit: BoxFit.fitWidth,
-          alignment: Alignment.topCenter,
+class _FoldingPage extends StatelessWidget {
+  final Alignment alignment;
+  final Widget child;
+  final double animationValue;
+  final Decoration? background;
+
+  const _FoldingPage({
+    Key? key,
+    required this.alignment,
+    required this.child,
+    this.animationValue: 0,
+    this.background,
+  }) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Transform(
+      alignment: alignment,
+      transform: Matrix4.identity()
+        ..setEntry(3, 2, 0.001)
+        ..rotateX(animationValue * -math.pi)
+      //
+      ,
+      child: Transform(
+        alignment: alignment,
+        transform: Matrix4.identity()..rotateX(animationValue * math.pi),
+        child: Container(
+          child: child,
+          // foregroundDecoration: animationValue >= 0.5 ? null : background,
         ),
       ),
     );
-  }
-
-  Widget _buildCollapsed(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        _toggleState(context);
-      },
-      child: Container(
-        height: widget.collapsedHeight,
-        child: Image.network(
-          'https://gamek.mediacdn.vn/133514250583805952/2021/8/5/spoiler-one-piece-1021pcqy-16281430347201268838506.jpg',
-          fit: BoxFit.fitWidth,
-          alignment: Alignment.topCenter,
-        ),
-      ),
-    );
-  }
-
-  void _toggleState(BuildContext context) {
-    setState(() {
-      if (collapsed)
-        _animationController.forward(from: 0);
-      else
-        _animationController.reverse(from: 1);
-      collapsed = !collapsed;
-    });
   }
 }
