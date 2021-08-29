@@ -66,7 +66,6 @@ class _FoldingPageState extends State<FoldingPage>
     } else if (foldCount * widget.foldingHeight < widget.expandedHeight) {
       foldCount++;
     }
-    // print('_FoldingPageState._createTweens: foldCount=$foldCount');
     var weightPerPage = 1.0 / foldCount;
     _alignmentTween = TweenSequence(List.generate(foldCount, (index) {
       var a = index % 2 == 0 ? Alignment.bottomCenter : Alignment.topCenter;
@@ -115,16 +114,12 @@ class _FoldingPageState extends State<FoldingPage>
   @override
   Widget build(BuildContext context) {
     var animationValue =
-        math.min(1.0, math.max(0.0, widget.curve.transform(_controller.value)));
+        widget.curve.transform(_controller.value).clamp(0.0, 1.0);
     var weightPerPage = 1.0 / foldCount;
     var needBackground = animationValue >= weightPerPage / 2;
-    var offsetY = !needBackground
-        ? math.max(
-            0.0,
-            widget.expandedHeight +
-                widget.foldingHeight -
-                (foldCount + 1) * widget.foldingHeight)
-        : 0.0;
+    var offsetY = widget.expandedHeight +
+        widget.foldingHeight -
+        (foldCount + 1) * widget.foldingHeight;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -133,22 +128,36 @@ class _FoldingPageState extends State<FoldingPage>
         Stack(
           fit: StackFit.passthrough,
           children: [
-            ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: math.max(
-                    widget.foldingHeight / widget.expandedHeight,
-                    math.max(0.0, math.min(1.0, 1 - animationValue + 0.1))),
-                child: SizedBox(
-                  height: widget.expandedHeight,
-                  child: widget.expandedChild,
+            Column(
+              children: [
+                ClipRect(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    heightFactor: math.max(
+                        widget.foldingHeight / widget.expandedHeight,
+                        (1.0 - animationValue).clamp(0.0, 1.0)),
+                    child: SizedBox(
+                      height: widget.expandedHeight,
+                      child: widget.expandedChild,
+                    ),
+                  ),
                 ),
-              ),
+                if (!needBackground)
+                  SizedBox(
+                    height: widget.foldingHeight,
+                  ),
+              ],
             ),
-            Transform.translate(
-              offset: Offset(0, widget.foldingHeight * (foldCount - 1)),
-              child: Transform.translate(
-                offset: _translateTween.transform(animationValue),
+            Transform(
+              transform: Matrix4.identity()
+                ..translate(
+                    0.0, widget.foldingHeight * (foldCount - 1) + offsetY),
+              child: Transform(
+                transform: Matrix4.identity()
+                  ..translate(
+                      0.0,
+                      _translateTween.transform(animationValue).dy -
+                          (needBackground ? offsetY : 0)),
                 child: Transform(
                   alignment: _alignmentTween.transform(animationValue),
                   transform: Matrix4.identity() //
@@ -161,8 +170,7 @@ class _FoldingPageState extends State<FoldingPage>
                     child: Transform(
                       alignment: Alignment.center,
                       transform: Matrix4.identity() //
-                        ..rotateX(math.pi)
-                        ..translate(0.0, offsetY),
+                        ..rotateX(math.pi),
                       child: Stack(
                         children: [
                           SizedBox(
@@ -185,10 +193,6 @@ class _FoldingPageState extends State<FoldingPage>
             ),
           ],
         ),
-        if (!needBackground)
-          SizedBox(
-            height: widget.foldingHeight,
-          ),
       ],
     );
   }

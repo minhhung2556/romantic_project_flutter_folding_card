@@ -16,7 +16,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final itemCount = 5;
+  final itemCount = 1;
   final foldOutList = <bool>[false, false, false, false, false];
 
   @override
@@ -49,10 +49,10 @@ class _MyAppState extends State<MyApp> {
               padding: const EdgeInsets.only(left: 22.0, right: 22),
               child: FoldingPage(
                 foldOut: foldOutList[index],
-                curve: foldOutList[index] == false
-                    ? Curves.easeInCubic
-                    : Curves.easeOutCubic,
-                duration: Duration(milliseconds: 600),
+                // curve: foldOutList[index] == false
+                //     ? Curves.easeInCubic
+                //     : Curves.easeOutCubic,
+                duration: Duration(milliseconds: 2000),
                 pageBackground: ElevatedButton(
                   style: ButtonStyle(
                       padding: MaterialStateProperty.all(EdgeInsets.zero)),
@@ -70,11 +70,21 @@ class _MyAppState extends State<MyApp> {
                 listener: (value, status) {
                   //TODO
                 },
-                expandedChild: Image.network(
-                  _kImageUrls[1],
-                  fit: BoxFit.cover,
-                  width: MediaQuery.of(context).size.width,
-                  alignment: Alignment.topCenter,
+                expandedChild: Container(
+                  foregroundDecoration: ShapeDecoration(
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Colors.black,
+                        width: 4,
+                      ),
+                    ),
+                  ),
+                  child: Image.network(
+                    _kImageUrls[1],
+                    fit: BoxFit.cover,
+                    width: MediaQuery.of(context).size.width,
+                    alignment: Alignment.topCenter,
+                  ),
                 ),
                 cover: ElevatedButton(
                   style: ButtonStyle(
