@@ -16,7 +16,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  var expanded = false;
+  final itemCount = 5;
+  final foldOutList = <bool>[false, false, false, false, false];
 
   @override
   Widget build(BuildContext context) {
@@ -28,47 +29,76 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         appBar: AppBar(
           title: Text('Example'),
+          actions: [
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  for (var i = 0; i < foldOutList.length; ++i) {
+                    foldOutList[i] = false;
+                  }
+                });
+              },
+              icon: Icon(Icons.cleaning_services_sharp),
+            ),
+          ],
         ),
         backgroundColor: Colors.white,
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: FoldingCard(
-                  expanded: expanded,
-                  pageHeight: 120,
-                  pageBackground: BoxDecoration(color: Colors.grey),
-                  cover: GestureDetector(
-                    onTap: () {
-                      _toggleState(context);
-                    },
-                    child: Image.network(
-                      _kImageUrls.first,
-                      fit: BoxFit.fitWidth,
-                      alignment: Alignment.topCenter,
-                    ),
+        body: ListView.builder(
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(left: 22.0, right: 22),
+              child: FoldingPage(
+                foldOut: foldOutList[index],
+                curve: foldOutList[index] == false
+                    ? Curves.easeInCubic
+                    : Curves.easeOutCubic,
+                duration: Duration(milliseconds: 600),
+                pageBackground: ElevatedButton(
+                  style: ButtonStyle(
+                      padding: MaterialStateProperty.all(EdgeInsets.zero)),
+                  onPressed: () {
+                    setState(() {
+                      foldOutList[index] = true;
+                    });
+                  },
+                  child: Container(
+                    alignment: Alignment.center,
+                    color: Colors.grey,
+                    child: Text('asd adf asdfa sdf'),
                   ),
-                  pages: _kImageUrls
-                      .map((e) => Image.network(
-                            e,
-                            fit: BoxFit.fitWidth,
-                            alignment: Alignment.topCenter,
-                          ))
-                      .toList()
-                        ..removeAt(0),
                 ),
+                listener: (value, status) {
+                  //TODO
+                },
+                expandedChild: Image.network(
+                  _kImageUrls[1],
+                  fit: BoxFit.cover,
+                  width: MediaQuery.of(context).size.width,
+                  alignment: Alignment.topCenter,
+                ),
+                cover: ElevatedButton(
+                  style: ButtonStyle(
+                      padding: MaterialStateProperty.all(EdgeInsets.zero)),
+                  onPressed: () {
+                    setState(() {
+                      foldOutList[index] = false;
+                    });
+                  },
+                  child: Image.network(
+                    _kImageUrls[2],
+                    fit: BoxFit.fitWidth,
+                    width: MediaQuery.of(context).size.width,
+                    alignment: Alignment.topCenter,
+                  ),
+                ),
+                foldingHeight: 100,
+                expandedHeight: 450,
               ),
-            ],
-          ),
+            );
+          },
+          itemCount: itemCount,
         ),
       ),
     );
-  }
-
-  void _toggleState(BuildContext context) {
-    setState(() {
-      expanded = !expanded;
-    });
   }
 }
