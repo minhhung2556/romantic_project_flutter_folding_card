@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// It helps you in creating a Romantic Folding Card.
+/// This widget is created to be able to standalone with any views, helps you able to add it into any complex design.
 class FoldingCard extends StatefulWidget {
   final Widget expandedCard;
   final double expandedHeight;
@@ -16,6 +18,21 @@ class FoldingCard extends StatefulWidget {
   final BoxDecoration? foldingShadow;
   final bool foldingShadowVisible;
 
+  /// Create a Romantic Folding Card.
+  ///
+  /// This widget will base on [foldOut] to decide to run the folding animation. The final widget after folded out is a [Column] includes [expandedCard] and [cover].
+  ///
+  /// The [expandedCard] is fixed by [expandedHeight], and the [cover] & [coverBackground] is fixed by [foldingHeight].
+  ///
+  /// [expandedHeight] & [foldingHeight] it's used to calculate the [_FoldingCardState._foldingCount].
+  ///
+  /// [foldingHeight] is height of each folding parts.
+  ///
+  /// During animating, when the [cover] is folding at 50% each of cycles, it will be turned into the [coverBackground].
+  /// And it has a [foldingShadow] that placed backward of [coverBackground] and [cover].
+  /// There is a default [foldingShadow], you can custom it also if you don't want to show it, set [foldingShadowVisible] to false, default is true.
+  ///
+  /// You can also custom the overall animation by using [curve] & [duration].
   const FoldingCard({
     Key? key,
     this.foldOut: false,
@@ -144,6 +161,7 @@ class _FoldingCardState extends State<FoldingCard>
     super.dispose();
   }
 
+  /// This logic is used to update exactly the current animation state. If not, there will be caused a bug if this [FoldingCard] is placed in a [ListView].
   @override
   void didChangeDependencies() {
     _controllerShadow.value = 0;
