@@ -3,45 +3,50 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-class FoldingPage extends StatefulWidget {
-  final Widget expandedChild;
+class FoldingCard extends StatefulWidget {
+  final Widget expandedCard;
   final double expandedHeight;
   final double foldingHeight;
   final Widget cover;
-  final Widget? pageBackground;
+  final Widget? coverBackground;
   final bool foldOut;
   final Function(double value, AnimationStatus status)? listener;
   final Curve curve;
   final Duration duration;
+  final BoxDecoration? foldingShadow;
+  final bool showFoldingShadow;
 
-  const FoldingPage({
+  const FoldingCard({
     Key? key,
     this.foldOut: false,
     this.listener,
     this.curve: Curves.linear,
     this.duration: const Duration(milliseconds: 1200),
     required this.cover,
-    this.pageBackground,
-    required this.expandedChild,
+    this.coverBackground,
+    required this.expandedCard,
     required this.expandedHeight,
     required this.foldingHeight,
+    this.foldingShadow,
+    this.showFoldingShadow: true,
   })  : assert(expandedHeight ~/ foldingHeight >= 1),
         super(key: key);
 
   @override
-  _FoldingPageState createState() => _FoldingPageState();
+  _FoldingCardState createState() => _FoldingCardState();
 }
 
-class _FoldingPageState extends State<FoldingPage>
+class _FoldingCardState extends State<FoldingCard>
     with TickerProviderStateMixin {
   late final AnimationController _controller;
-  late TweenSequence<Alignment> _alignmentTween;
-  late TweenSequence<Offset> _translateTween;
-  late int foldCount;
   late final AnimationController _controllerShadow;
-  late TweenSequence<double> _shadowTween;
-  late TweenSequence<double> _bottomMarginTween;
-  late TweenSequence<double> _topMarginTween;
+
+  late TweenSequence<Alignment> _coverAlignmentTween;
+  late TweenSequence<Offset> _coverTranslateTween;
+  late int _foldingCount;
+  late TweenSequence<double> _shadowOpacityTween;
+  late TweenSequence<double> _foldingOutBottomMarginTween;
+  late TweenSequence<double> _foldingInTopMarginTween;
 
   @override
   void initState() {
@@ -58,42 +63,35 @@ class _FoldingPageState extends State<FoldingPage>
     _controllerShadow.addListener(() {
       setState(() {});
     });
-    _createTweens();
+    _initTweens();
     super.initState();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _createTweens() {
-    foldCount = (widget.expandedHeight / widget.foldingHeight).round();
-    if (foldCount * widget.foldingHeight > widget.expandedHeight) {
-      foldCount--;
-    } else if (foldCount * widget.foldingHeight < widget.expandedHeight) {
-      foldCount++;
+  void _initTweens() {
+    _foldingCount = (widget.expandedHeight / widget.foldingHeight).round();
+    if (_foldingCount * widget.foldingHeight > widget.expandedHeight) {
+      _foldingCount--;
+    } else if (_foldingCount * widget.foldingHeight < widget.expandedHeight) {
+      _foldingCount++;
     }
-    var weightPerPage = 1.0 / foldCount;
-    _alignmentTween = TweenSequence(List.generate(foldCount, (index) {
+    _coverAlignmentTween = TweenSequence(List.generate(_foldingCount, (index) {
       var a = index % 2 == 0 ? Alignment.bottomCenter : Alignment.topCenter;
       return TweenSequenceItem(
         tween: Tween(begin: a, end: a),
-        weight: weightPerPage,
+        weight: _weightPerPage,
       );
     }));
-    _translateTween = TweenSequence(List.generate(
-      foldCount,
+    _coverTranslateTween = TweenSequence(List.generate(
+      _foldingCount,
       (index) {
         var y = index ~/ 2 * (-widget.foldingHeight * 2);
         return TweenSequenceItem(
           tween: Tween(begin: Offset(0, y), end: Offset(0, y)),
-          weight: weightPerPage,
+          weight: _weightPerPage,
         );
       },
     ));
-    _shadowTween = TweenSequence([
+    _shadowOpacityTween = TweenSequence([
       TweenSequenceItem(
         tween: Tween(begin: 0.0, end: 1.0),
         weight: 0.1,
@@ -107,7 +105,7 @@ class _FoldingPageState extends State<FoldingPage>
         weight: 0.1,
       ),
     ]);
-    _bottomMarginTween = TweenSequence([
+    _foldingOutBottomMarginTween = TweenSequence([
       TweenSequenceItem(
         tween: Tween(begin: 0.0, end: widget.foldingHeight),
         weight: 0.2,
@@ -121,20 +119,29 @@ class _FoldingPageState extends State<FoldingPage>
         weight: 0.1,
       ),
     ]);
-    _topMarginTween = TweenSequence([
+    _foldingInTopMarginTween = TweenSequence([
       TweenSequenceItem(
         tween: Tween(begin: widget.foldingHeight, end: 0.0),
-        weight: weightPerPage / 2,
+        weight: _weightPerPage / 2,
       ),
       TweenSequenceItem(
         tween: Tween(begin: 0.0, end: widget.foldingHeight),
-        weight: 1 - weightPerPage,
+        weight: 1 - _weightPerPage,
       ),
       TweenSequenceItem(
         tween: Tween(begin: widget.foldingHeight, end: 0.0),
-        weight: weightPerPage / 2,
+        weight: _weightPerPage / 2,
       ),
     ]);
+  }
+
+  double get _weightPerPage => 1.0 / _foldingCount;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _controllerShadow.dispose();
+    super.dispose();
   }
 
   @override
@@ -149,8 +156,8 @@ class _FoldingPageState extends State<FoldingPage>
   }
 
   @override
-  void didUpdateWidget(covariant FoldingPage oldWidget) {
-    _createTweens();
+  void didUpdateWidget(covariant FoldingCard oldWidget) {
+    _initTweens();
 
     if (oldWidget.foldOut != widget.foldOut) {
       if (widget.foldOut) {
@@ -166,19 +173,24 @@ class _FoldingPageState extends State<FoldingPage>
 
   @override
   Widget build(BuildContext context) {
-    var animationValue =
+    var foldingInValue =
         widget.curve.transform(_controller.value).clamp(0.0, 1.0);
-    var weightPerPage = 1.0 / foldCount;
-    var needBackground = animationValue >= weightPerPage / 2;
-    var offsetY = widget.expandedHeight +
+    var needBackground = foldingInValue >= _weightPerPage / 2;
+    var deltaYWithTrueExpandedHeight = widget.expandedHeight +
         widget.foldingHeight -
-        (foldCount + 1) * widget.foldingHeight;
+        (_foldingCount + 1) * widget.foldingHeight;
     var expandedHeightFactor = math.max(
         widget.foldingHeight / widget.expandedHeight,
-        ((1.0 - animationValue) * 1.22).clamp(0.0, 1.0));
+        ((1.0 - foldingInValue) * 1.22).clamp(0.0, 1.0));
+    var foldingOutValue = 1 - foldingInValue;
+    var coverTranslateY = widget.foldingHeight * (_foldingCount - 1) +
+        deltaYWithTrueExpandedHeight;
+    var foldingRotateRad = foldingInValue * -math.pi * _foldingCount;
+    var coverFoldingRotateRad = _foldingCount % 2 != 0 ? math.pi : 0.0;
+
     return Padding(
       padding: EdgeInsets.only(
-        bottom: _bottomMarginTween.transform(1 - animationValue),
+        bottom: _foldingOutBottomMarginTween.transform(foldingOutValue),
       ),
       child: Stack(
         fit: StackFit.passthrough,
@@ -191,50 +203,50 @@ class _FoldingPageState extends State<FoldingPage>
                   heightFactor: expandedHeightFactor,
                   child: SizedBox(
                     height: widget.expandedHeight,
-                    child: widget.expandedChild,
+                    child: widget.expandedCard,
                   ),
                 ),
               ),
               Stack(
                 children: [
                   SizedBox(
-                    height: _topMarginTween.transform(animationValue),
+                    height: _foldingInTopMarginTween.transform(foldingInValue),
                   ),
-                  Opacity(
-                    opacity: _shadowTween.transform((1 - animationValue)),
-                    child: Container(
-                      foregroundDecoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black87,
-                            blurRadius: widget.foldingHeight,
-                            spreadRadius: widget.foldingHeight * 0.5,
-                          ),
-                        ],
+                  if (widget.showFoldingShadow)
+                    Opacity(
+                      opacity: _shadowOpacityTween.transform((foldingOutValue)),
+                      child: Container(
+                        foregroundDecoration: widget.foldingShadow ??
+                            BoxDecoration(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black54,
+                                  blurRadius: widget.foldingHeight,
+                                  spreadRadius: widget.foldingHeight * 0.5,
+                                ),
+                              ],
+                            ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ],
           ),
           Transform(
-            transform: Matrix4.identity()
-              ..translate(
-                  0.0, widget.foldingHeight * (foldCount - 1) + offsetY),
+            transform: Matrix4.identity()..translate(0.0, coverTranslateY),
             child: Transform(
               transform: Matrix4.identity()
                 ..translate(
                     0.0,
-                    _translateTween.transform(animationValue).dy -
-                        (needBackground ? offsetY : 0)),
+                    _coverTranslateTween.transform(foldingInValue).dy -
+                        (needBackground ? deltaYWithTrueExpandedHeight : 0)),
               child: Transform(
-                alignment: _alignmentTween.transform(animationValue),
+                alignment: _coverAlignmentTween.transform(foldingInValue),
                 transform: Matrix4.identity() //
                   ..setEntry(3, 2, 0.001)
-                  ..rotateX(animationValue * -math.pi * foldCount),
+                  ..rotateX(foldingRotateRad),
                 child: Transform(
-                  alignment: _alignmentTween.transform(animationValue),
+                  alignment: _coverAlignmentTween.transform(foldingInValue),
                   transform: Matrix4.identity() //
                     ..rotateX(math.pi),
                   child: Transform(
@@ -248,13 +260,13 @@ class _FoldingPageState extends State<FoldingPage>
                           width: double.infinity,
                           height: widget.foldingHeight,
                         ),
-                        if (needBackground && widget.pageBackground != null)
+                        if (needBackground && widget.coverBackground != null)
                           Transform(
                             alignment: Alignment.center,
                             transform: Matrix4.identity() //
-                              ..rotateX(foldCount % 2 != 0 ? math.pi : 0),
+                              ..rotateX(coverFoldingRotateRad),
                             child: SizedBox(
-                              child: widget.pageBackground!,
+                              child: widget.coverBackground!,
                               width: double.infinity,
                               height: widget.foldingHeight,
                             ),

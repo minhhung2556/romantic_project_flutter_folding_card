@@ -16,7 +16,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final itemCount = 1;
+  final itemCount = 5;
   final foldOutList = <bool>[false, false, false, false, false];
 
   @override
@@ -42,18 +42,18 @@ class _MyAppState extends State<MyApp> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Color(0xffd9d9d9),
         body: ListView.builder(
           itemBuilder: (context, index) {
             return Padding(
               padding: const EdgeInsets.only(left: 22.0, right: 22),
-              child: FoldingPage(
+              child: FoldingCard(
                 foldOut: foldOutList[index],
-                // curve: foldOutList[index] == false
-                //     ? Curves.easeInCubic
-                //     : Curves.easeOutCubic,
-                duration: Duration(milliseconds: 2000),
-                pageBackground: ElevatedButton(
+                curve: foldOutList[index] == true
+                    ? Curves.easeInCubic
+                    : Curves.easeOutCubic,
+                duration: Duration(milliseconds: 1400),
+                coverBackground: ElevatedButton(
                   style: ButtonStyle(
                       padding: MaterialStateProperty.all(EdgeInsets.zero)),
                   onPressed: () {
@@ -70,22 +70,32 @@ class _MyAppState extends State<MyApp> {
                 listener: (value, status) {
                   //TODO
                 },
-                expandedChild: Container(
-                  foregroundDecoration: ShapeDecoration(
-                    shape: RoundedRectangleBorder(
-                      side: BorderSide(
-                        color: Colors.black,
-                        width: 4,
+                expandedCard: index == 1
+                    ? Stack(
+                        children: [
+                          Image.network(
+                            _kImageUrls[3],
+                            fit: BoxFit.fitWidth,
+                            width: MediaQuery.of(context).size.width,
+                            alignment: Alignment.topCenter,
+                          ),
+                          Center(
+                            child: ElevatedButton(
+                              style: ButtonStyle(
+                                  padding: MaterialStateProperty.all(
+                                      EdgeInsets.zero)),
+                              onPressed: () {},
+                              child: Text('sadf asdf asdf a'),
+                            ),
+                          )
+                        ],
+                      )
+                    : Image.network(
+                        _kImageUrls[1],
+                        fit: BoxFit.cover,
+                        width: MediaQuery.of(context).size.width,
+                        alignment: Alignment.topCenter,
                       ),
-                    ),
-                  ),
-                  child: Image.network(
-                    _kImageUrls[1],
-                    fit: BoxFit.cover,
-                    width: MediaQuery.of(context).size.width,
-                    alignment: Alignment.topCenter,
-                  ),
-                ),
                 cover: ElevatedButton(
                   style: ButtonStyle(
                       padding: MaterialStateProperty.all(EdgeInsets.zero)),
@@ -102,7 +112,7 @@ class _MyAppState extends State<MyApp> {
                   ),
                 ),
                 foldingHeight: 100,
-                expandedHeight: 450,
+                expandedHeight: 300,
               ),
             );
           },
