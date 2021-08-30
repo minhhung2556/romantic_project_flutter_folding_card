@@ -14,7 +14,7 @@ class FoldingCard extends StatefulWidget {
   final Curve curve;
   final Duration duration;
   final BoxDecoration? foldingShadow;
-  final bool showFoldingShadow;
+  final bool foldingShadowVisible;
 
   const FoldingCard({
     Key? key,
@@ -28,7 +28,7 @@ class FoldingCard extends StatefulWidget {
     required this.expandedHeight,
     required this.foldingHeight,
     this.foldingShadow,
-    this.showFoldingShadow: true,
+    this.foldingShadowVisible: true,
   })  : assert(expandedHeight ~/ foldingHeight >= 1),
         super(key: key);
 
@@ -212,7 +212,7 @@ class _FoldingCardState extends State<FoldingCard>
                   SizedBox(
                     height: _foldingInTopMarginTween.transform(foldingInValue),
                   ),
-                  if (widget.showFoldingShadow)
+                  if (widget.foldingShadowVisible)
                     Opacity(
                       opacity: _shadowOpacityTween.transform((foldingOutValue)),
                       child: Container(
