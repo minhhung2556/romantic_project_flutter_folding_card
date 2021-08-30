@@ -16,8 +16,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final itemCount = 5;
-  final foldOutList = <bool>[false, false, false, false, false];
+  final itemCount = 3;
+  final foldOutList = <bool>[false, false, false];
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,7 @@ class _MyAppState extends State<MyApp> {
             ),
           ],
         ),
-        backgroundColor: Color(0xffd9d9d9),
+        backgroundColor: Colors.white,
         body: ListView.builder(
           itemBuilder: (context, index) {
             return Padding(
@@ -54,22 +54,16 @@ class _MyAppState extends State<MyApp> {
                     : Curves.easeOutCubic,
                 duration: Duration(milliseconds: 1400),
                 coverBackground: ElevatedButton(
-                  style: ButtonStyle(
-                      padding: MaterialStateProperty.all(EdgeInsets.zero)),
                   onPressed: () {
                     setState(() {
                       foldOutList[index] = true;
                     });
                   },
-                  child: Container(
-                    alignment: Alignment.center,
-                    color: Colors.grey,
-                    child: Text('asd adf asdfa sdf'),
+                  child: Text(
+                    'This is a sample coverBackground, click on it to fold in.',
+                    textAlign: TextAlign.center,
                   ),
                 ),
-                listener: (value, status) {
-                  //TODO
-                },
                 expandedCard: index == 1
                     ? Stack(
                         children: [
@@ -81,11 +75,10 @@ class _MyAppState extends State<MyApp> {
                           ),
                           Center(
                             child: ElevatedButton(
-                              style: ButtonStyle(
-                                  padding: MaterialStateProperty.all(
-                                      EdgeInsets.zero)),
                               onPressed: () {},
-                              child: Text('sadf asdf asdf a'),
+                              child: Text(
+                                'This is a other sample for expandedCard.',
+                              ),
                             ),
                           )
                         ],
@@ -98,7 +91,8 @@ class _MyAppState extends State<MyApp> {
                       ),
                 cover: ElevatedButton(
                   style: ButtonStyle(
-                      padding: MaterialStateProperty.all(EdgeInsets.zero)),
+                    padding: MaterialStateProperty.all(EdgeInsets.zero),
+                  ),
                   onPressed: () {
                     setState(() {
                       foldOutList[index] = false;
