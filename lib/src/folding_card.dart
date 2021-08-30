@@ -33,11 +33,15 @@ class FoldingPage extends StatefulWidget {
 }
 
 class _FoldingPageState extends State<FoldingPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _controller;
   late TweenSequence<Alignment> _alignmentTween;
   late TweenSequence<Offset> _translateTween;
   late int foldCount;
+  late final AnimationController _controllerShadow;
+  late TweenSequence<double> _shadowTween;
+  late TweenSequence<double> _bottomMarginTween;
+  late TweenSequence<double> _topMarginTween;
 
   @override
   void initState() {
@@ -47,6 +51,11 @@ class _FoldingPageState extends State<FoldingPage>
       if (widget.listener != null) {
         widget.listener!(_controller.value, _controller.status);
       }
+      setState(() {});
+    });
+    _controllerShadow =
+        AnimationController(vsync: this, duration: widget.duration);
+    _controllerShadow.addListener(() {
       setState(() {});
     });
     _createTweens();
@@ -84,11 +93,53 @@ class _FoldingPageState extends State<FoldingPage>
         );
       },
     ));
+    _shadowTween = TweenSequence([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 1.0),
+        weight: 0.1,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.0),
+        weight: 0.8,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 0.0),
+        weight: 0.1,
+      ),
+    ]);
+    _bottomMarginTween = TweenSequence([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: widget.foldingHeight),
+        weight: 0.2,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: widget.foldingHeight, end: widget.foldingHeight),
+        weight: 0.7,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: widget.foldingHeight, end: 0.0),
+        weight: 0.1,
+      ),
+    ]);
+    _topMarginTween = TweenSequence([
+      TweenSequenceItem(
+        tween: Tween(begin: widget.foldingHeight, end: 0.0),
+        weight: weightPerPage / 2,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: widget.foldingHeight),
+        weight: 1 - weightPerPage,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: widget.foldingHeight, end: 0.0),
+        weight: weightPerPage / 2,
+      ),
+    ]);
   }
 
   @override
   void didChangeDependencies() {
-    print('_FoldingPageState.didChangeDependencies');
+    _controllerShadow.value = 0;
     if (widget.foldOut) {
       _controller.value = 0;
     } else {
@@ -103,8 +154,10 @@ class _FoldingPageState extends State<FoldingPage>
 
     if (oldWidget.foldOut != widget.foldOut) {
       if (widget.foldOut) {
+        _controllerShadow.forward(from: 0);
         if (_controller.value > 0) _controller.reverse(from: 1);
       } else {
+        _controllerShadow.reverse(from: 1.0);
         if (_controller.value < 1) _controller.forward(from: 0);
       }
     }
@@ -120,80 +173,101 @@ class _FoldingPageState extends State<FoldingPage>
     var offsetY = widget.expandedHeight +
         widget.foldingHeight -
         (foldCount + 1) * widget.foldingHeight;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Stack(
-          fit: StackFit.passthrough,
-          children: [
-            Column(
-              children: [
-                ClipRect(
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    heightFactor: math.max(
-                        widget.foldingHeight / widget.expandedHeight,
-                        (1.0 - animationValue).clamp(0.0, 1.0)),
-                    child: SizedBox(
-                      height: widget.expandedHeight,
-                      child: widget.expandedChild,
-                    ),
+    var expandedHeightFactor = math.max(
+        widget.foldingHeight / widget.expandedHeight,
+        ((1.0 - animationValue) * 1.22).clamp(0.0, 1.0));
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: _bottomMarginTween.transform(1 - animationValue),
+      ),
+      child: Stack(
+        fit: StackFit.passthrough,
+        children: [
+          Column(
+            children: [
+              ClipRect(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  heightFactor: expandedHeightFactor,
+                  child: SizedBox(
+                    height: widget.expandedHeight,
+                    child: widget.expandedChild,
                   ),
                 ),
-                if (!needBackground)
+              ),
+              Stack(
+                children: [
                   SizedBox(
-                    height: widget.foldingHeight,
+                    height: _topMarginTween.transform(animationValue),
                   ),
-              ],
-            ),
-            Transform(
+                  Opacity(
+                    opacity: _shadowTween.transform((1 - animationValue)),
+                    child: Container(
+                      foregroundDecoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black87,
+                            blurRadius: widget.foldingHeight,
+                            spreadRadius: widget.foldingHeight * 0.5,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Transform(
+            transform: Matrix4.identity()
+              ..translate(
+                  0.0, widget.foldingHeight * (foldCount - 1) + offsetY),
+            child: Transform(
               transform: Matrix4.identity()
                 ..translate(
-                    0.0, widget.foldingHeight * (foldCount - 1) + offsetY),
+                    0.0,
+                    _translateTween.transform(animationValue).dy -
+                        (needBackground ? offsetY : 0)),
               child: Transform(
-                transform: Matrix4.identity()
-                  ..translate(
-                      0.0,
-                      _translateTween.transform(animationValue).dy -
-                          (needBackground ? offsetY : 0)),
+                alignment: _alignmentTween.transform(animationValue),
+                transform: Matrix4.identity() //
+                  ..setEntry(3, 2, 0.001)
+                  ..rotateX(animationValue * -math.pi * foldCount),
                 child: Transform(
                   alignment: _alignmentTween.transform(animationValue),
                   transform: Matrix4.identity() //
-                    ..setEntry(3, 2, 0.001)
-                    ..rotateX(animationValue * -math.pi * foldCount),
+                    ..rotateX(math.pi),
                   child: Transform(
-                    alignment: _alignmentTween.transform(animationValue),
+                    alignment: Alignment.center,
                     transform: Matrix4.identity() //
                       ..rotateX(math.pi),
-                    child: Transform(
-                      alignment: Alignment.center,
-                      transform: Matrix4.identity() //
-                        ..rotateX(math.pi),
-                      child: Stack(
-                        children: [
-                          SizedBox(
-                            child: widget.cover,
-                            width: double.infinity,
-                            height: widget.foldingHeight,
-                          ),
-                          if (needBackground && widget.pageBackground != null)
-                            SizedBox(
+                    child: Stack(
+                      children: [
+                        SizedBox(
+                          child: widget.cover,
+                          width: double.infinity,
+                          height: widget.foldingHeight,
+                        ),
+                        if (needBackground && widget.pageBackground != null)
+                          Transform(
+                            alignment: Alignment.center,
+                            transform: Matrix4.identity() //
+                              ..rotateX(foldCount % 2 != 0 ? math.pi : 0),
+                            child: SizedBox(
                               child: widget.pageBackground!,
                               width: double.infinity,
                               height: widget.foldingHeight,
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }
