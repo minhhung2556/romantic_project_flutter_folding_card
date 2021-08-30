@@ -1,8 +1,8 @@
 name: flutter_folding_card
-description: A Flutter package to create Horizontal Featured List. It helps you in saving time during the development of many same designs.
-version: 1.0.1+1
+description: A Flutter package to create a Romantic Folding Card. It will be useful for your awesome app.
+version: 1.0.0
 homepage: https://romanticdeveloper.com
-repository: https://github.com/minhhung2556/romantic_project_flutter_folding_card.git
+repository: https://github.com/minhhung2556/romantic_project_flutter_folding_card
 
 environment:
   sdk: '>=2.12.0 <3.0.0'
