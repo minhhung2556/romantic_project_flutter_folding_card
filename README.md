@@ -1,6 +1,7 @@
-# Flutter Romantic Folding Card
+# Flutter Romantic Expandable Card with folding effect
 
-A Flutter package to create a Romantic Folding Card. It will be useful for your awesome app.
+A Flutter package to create a Romantic Expandable Card with folding effect. It will be useful for your awesome app.
+This widget is created to be standalone with any widgets, helps you able to add to any complex design.
 
 This is a present from Romantic Project. More from [Romantic Developer](https://pub.dev/publishers/romanticdeveloper.com/packages)
 
