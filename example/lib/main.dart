@@ -4,10 +4,9 @@ import 'package:flutter_folding_card/flutter_folding_card.dart';
 void main() => runApp(MyApp());
 
 const _kImageUrls = [
-  "https://scontent-hkg4-1.xx.fbcdn.net/v/t1.6435-9/240669493_3093165274342302_7696944317595605164_n.jpg?_nc_cat=107&ccb=1-5&_nc_sid=730e14&_nc_ohc=QRmRTo3bJOQAX_u8ELe&_nc_ht=scontent-hkg4-1.xx&oh=374ca65aaff7a46dfd4d2f14aff72b11&oe=614F64BC",
-  "https://scontent-hkg4-2.xx.fbcdn.net/v/t1.6435-9/240758821_3092745557717607_1758983175902930666_n.jpg?_nc_cat=109&ccb=1-5&_nc_sid=730e14&_nc_ohc=z0srgae32A4AX_oURvc&_nc_ht=scontent-hkg4-2.xx&oh=e981297264aca64a25aaf285259f41d7&oe=614CDEA1",
-  "https://scontent-hkg4-1.xx.fbcdn.net/v/t1.6435-9/240624734_3092487924410037_2111143168440995076_n.jpg?_nc_cat=107&ccb=1-5&_nc_sid=730e14&_nc_ohc=TZukbOFjxowAX8IYthH&_nc_ht=scontent-hkg4-1.xx&oh=59dd511589b6dbdea97a3b478b5d629f&oe=614D9448",
-  "https://scontent-hkg4-1.xx.fbcdn.net/v/t1.6435-9/s640x640/237446804_3091585131166983_1116147550483070313_n.jpg?_nc_cat=105&ccb=1-5&_nc_sid=8bfeb9&_nc_ohc=5QCW7JFNQoAAX-Suuyv&_nc_ht=scontent-hkg4-1.xx&oh=ca4d078c57e9b95815d6facb38bef7db&oe=614C87E3",
+  "assets/sample_1.jpg",
+  "assets/sample_2.jpg",
+  "assets/sample_3.jpg",
 ];
 
 class MyApp extends StatefulWidget {
@@ -67,8 +66,8 @@ class _MyAppState extends State<MyApp> {
                 expandedCard: index == 1
                     ? Stack(
                         children: [
-                          Image.network(
-                            _kImageUrls[3],
+                          Image.asset(
+                            _kImageUrls[0],
                             fit: BoxFit.fitWidth,
                             width: MediaQuery.of(context).size.width,
                             alignment: Alignment.topCenter,
@@ -83,7 +82,7 @@ class _MyAppState extends State<MyApp> {
                           )
                         ],
                       )
-                    : Image.network(
+                    : Image.asset(
                         _kImageUrls[1],
                         fit: BoxFit.cover,
                         width: MediaQuery.of(context).size.width,
@@ -98,7 +97,7 @@ class _MyAppState extends State<MyApp> {
                       foldOutList[index] = false;
                     });
                   },
-                  child: Image.network(
+                  child: Image.asset(
                     _kImageUrls[2],
                     fit: BoxFit.fitWidth,
                     width: MediaQuery.of(context).size.width,
